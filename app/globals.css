@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/*
+ * FlipScout — night-scout cockpit.
+ * Deep blue-slate ground, one amber accent (deal heat / money).
+ * Semantic verdict colors are reserved for verdicts and profit only.
+ */
+@theme {
+  --color-ground: #0b101b;
+  --color-surface: #121826;
+  --color-raised: #1a2334;
+  --color-line: #24304a;
+  --color-ink: #e8edf6;
+  --color-mut: #8a96ad;
+  --color-faint: #5c6880;
+  --color-accent: #f0a63a;
+  --color-buy: #3ddc97;
+  --color-good: #5ea8ff;
+  --color-nego: #f0a63a;
+  --color-pass: #f7727c;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}

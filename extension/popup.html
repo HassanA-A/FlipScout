@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 300px;
+        margin: 0;
+        padding: 14px;
+        background: #0b101b;
+        color: #e8edf6;
+        font: 13px/1.5 system-ui, sans-serif;
+      }
+      button {
+        width: 100%;
+        padding: 9px;
+        border: 0;
+        border-radius: 6px;
+        background: #f0a63a;
+        color: #0b101b;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:disabled { opacity: 0.5; }
+      input {
+        width: 100%;
+        margin: 4px 0 10px;
+        padding: 6px 8px;
+        border: 1px solid #24304a;
+        border-radius: 6px;
+        background: #121826;
+        color: #e8edf6;
+        box-sizing: border-box;
+      }
+      label { font-size: 11px; color: #8a96ad; }
+      #result { margin-top: 12px; white-space: pre-wrap; }
+      .buy { color: #3ddc97; font-weight: 700; }
+      .pass { color: #f7727c; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <label for="endpoint">FlipScout endpoint</label>
+    <input id="endpoint" placeholder="http://localhost:3000" />
+    <button id="go">Analyze with FlipScout</button>
+    <div id="result"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
