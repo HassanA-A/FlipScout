@@ -3,8 +3,8 @@ import { money } from "@/lib/board";
 
 export const dynamic = "force-dynamic";
 
-export default function AnalyticsPage() {
-  const { deals } = readDb();
+export default async function AnalyticsPage() {
+  const { deals } = await readDb();
 
   const purchased = deals.filter((d) => d.status === "purchased" && d.purchasePrice);
   const sold = deals.filter((d) => d.status === "sold" && d.purchasePrice && d.salePrice);

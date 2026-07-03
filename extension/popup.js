@@ -1,12 +1,18 @@
+// Firefox extension
 const endpointInput = document.getElementById("endpoint");
 const goBtn = document.getElementById("go");
 const resultEl = document.getElementById("result");
 
-chrome.storage.sync.get({ endpoint: "http://localhost:3000" }, ({ endpoint }) => {
+// Use browser (Firefox) instead of chrome
+const storage = typeof browser !== "undefined" ? browser.storage.local : chrome.storage.sync;
+const tabs = typeof browser !== "undefined" ? browser.tabs : chrome.tabs;
+
+storage.get({ endpoint: "http://localhost:3000" }, ({ endpoint }) => {
   endpointInput.value = endpoint;
 });
+
 endpointInput.addEventListener("change", () => {
-  chrome.storage.sync.set({ endpoint: endpointInput.value });
+  storage.set({ endpoint: endpointInput.value });
 });
 
 goBtn.addEventListener("click", async () => {
@@ -14,11 +20,25 @@ goBtn.addEventListener("click", async () => {
   resultEl.textContent = "Capturing page…";
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const [{ result: capture }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ["capture.js"],
-    });
+    const [tab] = await tabs.query({ active: true, currentWindow: true });
+
+    // Firefox: browser.tabs.executeScript, Chrome: chrome.scripting.executeScript
+    let capture;
+    if (typeof browser !== "undefined") {
+      // Firefox
+      const results = await browser.tabs.executeScript(tab.id, {
+        file: "capture.js",
+        frameId: 0,
+      });
+      capture = results[0];
+    } else {
+      // Chrome fallback (if needed)
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["capture.js"],
+      });
+      capture = results[0].result;
+    }
 
     if (!capture?.title || capture.price === null) {
       resultEl.textContent =

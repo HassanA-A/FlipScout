@@ -1,52 +1,43 @@
 # FlipScout
 
-AI-powered deal scouting for local PC flippers. One board to capture, value,
-and track deals from Facebook Marketplace, OfferUp, Craigslist, eBay, and more
-— without depending on scraping.
+AI-powered deal scouting for local PC flippers.
 
-**Read [DESIGN.md](./DESIGN.md) first** — architecture decisions, database
-schema, API design, AI pipeline, roadmap, and the business case.
+One board to capture, value, and track deals from Facebook Marketplace, OfferUp, Craigslist, eBay, and more — without scraping.
 
-## What's in this prototype
+## Quick start
 
-- **Deal board** — 8-stage kanban (New → Sold/Passed), drag-and-drop, deal
-  modal with analysis, notes, and purchase/sale actuals.
-- **Analyzer** — paste listing text + price → deterministic alias engine
-  extracts components and values them from the price database. The LLM (M2)
-  will only ever extract; it never sets prices.
-- **Watchlists** — rules like "RTX 3060 under $180" with live match counts.
-- **Price database** — editable component values that drive every valuation.
-- **Analytics** — invested, ROI, realized profit, best flips, from actuals.
-- **Chrome extension skeleton** (`extension/`) — user-initiated capture of the
-  listing you're viewing → `POST /api/ingest` → analyzed and on your board.
+**See [SETUP.md](./SETUP.md) for step-by-step instructions.**
 
-Persistence is a JSON file (`data/db.json`, seeded with demo deals on first
-run). `lib/store.ts` is the only module that knows this — milestone M1 swaps
-it for Supabase Postgres without touching the UI.
-
-## Run it
-
+TL;DR:
 ```bash
 npm install
+cp .env.example .env.local
+# Add your Supabase credentials to .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. To reset the demo data, delete `data/db.json`.
+Open http://localhost:3000 and load the Firefox extension from `extension/`.
 
-### Try the analyzer
+## What's inside
 
-Paste something like this on the Analyze page with an asking price of $420:
+- **Deal board** — 8-stage kanban with drag-and-drop and analysis breakdown
+- **Analyzer** — deterministic alias engine + LLM extraction fallback (M2)
+- **Watchlists** — rules with live match counts
+- **Price database** — editable component values
+- **Analytics** — ROI, invested, best flips
+- **Firefox extension** — user-initiated capture from any marketplace
 
-> Custom gaming PC. Ryzen 5 5600X, RTX 3060 12GB, 16GB DDR4 3200, 1TB NVMe,
-> 650W gold PSU, B550 board, NZXT H510 case.
+Stack: Next.js · TypeScript · Tailwind · Supabase Postgres
 
-### Load the extension
+## Architecture
 
-1. `chrome://extensions` → Developer mode → Load unpacked → `extension/`
-2. Open any marketplace listing, click the FlipScout icon → **Analyze with
-   FlipScout**. Requires the dev server running.
+See [DESIGN.md](./DESIGN.md) for the full CTO-level design: database schema, API contract, AI pipeline, roadmap, business assessment.
 
-## Stack
+## Status
 
-Next.js (App Router) · React · TypeScript · Tailwind v4 — a deliberate
-monolith; see DESIGN.md §1.1 for why there's no separate FastAPI service yet.
+Prototype: ✅ Core board + analyzer + watchlists  
+Firefox extension: ✅ User-initiated capture  
+Supabase + Vercel: ✅ Deployed  
+LLM extraction: 🔜 Milestone M2  
+Discord/Telegram alerts: 🔜 Milestone M4  
+eBay/Reddit polling: 🔜 Milestone M5

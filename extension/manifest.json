@@ -1,13 +1,18 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "FlipScout — Analyze with FlipScout",
   "version": "0.1.0",
   "description": "Capture the listing you're viewing and send it to your FlipScout board for AI deal analysis.",
-  "action": {
+  "browser_action": {
     "default_popup": "popup.html",
     "default_title": "Analyze with FlipScout"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
   "host_permissions": [
     "https://*.facebook.com/*",
     "https://*.offerup.com/*",
