@@ -1,5 +1,4 @@
 {
   "buildCommand": "next build",
-  "outputDirectory": ".next",
-  "env": ["SUPABASE_URL", "SUPABASE_ANON_KEY"]
+  "outputDirectory": ".next"
 }
