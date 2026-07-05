@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { analyze } from "@/lib/analyzer";
 import { createDeal, readDb } from "@/lib/store";
 import { matchWatchlists } from "@/lib/watchlist";
+import { createClient } from "@supabase/supabase-js";
 import type { Source } from "@/lib/types";
 
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-FlipScout-Key",
+    "Access-Control-Allow-Headers": "Content-Type, X-FlipScout-Key, Authorization",
   };
 }
 
@@ -22,6 +23,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: corsHeaders() });
   }
 
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "missing auth token" }, { status: 401, headers: corsHeaders() });
+  }
+
+  const token = authHeader.slice(7);
+  const sb = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!
+  );
+
+  const { data: { user }, error: authError } = await sb.auth.getUser(token);
+  if (authError || !user) {
+    return NextResponse.json({ error: "invalid token" }, { status: 401, headers: corsHeaders() });
+  }
+
   const body = await req.json();
   const { source, url, title, price, description, seller, distanceMi } = body;
   if (!title || typeof price !== "number") {
@@ -29,7 +46,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const db = await readDb();
+    const db = await readDb(user.id);
     const text = `${title}\n${description ?? ""}`;
     const a = analyze(text, price, db.priceOverrides);
     const now = new Date().toISOString();
@@ -51,7 +68,7 @@ export async function POST(req: Request) {
       distanceMi,
       listedAt: now,
       rawText: text,
-    });
+    }, user.id);
 
     const hits = matchWatchlists(deal, db.watchlists);
     return NextResponse.json({ deal, analysis: a, watchlistHits: hits.map((w) => w.name) }, { status: 201, headers: corsHeaders() });

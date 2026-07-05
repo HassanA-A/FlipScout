@@ -56,13 +56,18 @@ function toWatchlist(row: any): Watchlist {
   };
 }
 
-export async function readDb(): Promise<Db> {
+export async function readDb(userId?: string): Promise<Db> {
   const sb = getSupabase();
 
-  const [deals, watchlists] = await Promise.all([
-    sb.from("deals").select("*").order("created_at", { ascending: false }),
-    sb.from("watchlists").select("*").order("created_at", { ascending: false }),
-  ]);
+  const dealsQuery = sb.from("deals").select("*").order("created_at", { ascending: false });
+  const watchlistsQuery = sb.from("watchlists").select("*").order("created_at", { ascending: false });
+
+  if (userId) {
+    dealsQuery.eq("user_id", userId);
+    watchlistsQuery.eq("user_id", userId);
+  }
+
+  const [deals, watchlists] = await Promise.all([dealsQuery, watchlistsQuery]);
 
   return {
     deals: (deals.data || []).map(toDeal),
@@ -75,9 +80,10 @@ export async function writeDb(_db: Db): Promise<void> {
   // No-op
 }
 
-export async function createDeal(deal: Omit<Deal, "id" | "createdAt" | "updatedAt">): Promise<Deal> {
+export async function createDeal(deal: Omit<Deal, "id" | "createdAt" | "updatedAt">, userId: string): Promise<Deal> {
   const sb = getSupabase();
   const record = {
+    user_id: userId,
     title: deal.title,
     url: deal.url,
     source: deal.source,
@@ -136,9 +142,10 @@ export async function deleteDeal(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function createWatchlist(wl: Omit<Watchlist, "id">): Promise<Watchlist> {
+export async function createWatchlist(wl: Omit<Watchlist, "id">, userId: string): Promise<Watchlist> {
   const sb = getSupabase();
   const record = {
+    user_id: userId,
     name: wl.name,
     query: wl.query,
     max_price: wl.maxPrice,
