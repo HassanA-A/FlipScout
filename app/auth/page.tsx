@@ -28,13 +28,13 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await sb.auth.signUpWithPassword({ email, password });
+        const { error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
         setError("Check your email to confirm signup");
       } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        const { error, data } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push("/");
+        if (data.session) router.push("/");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Auth failed");
