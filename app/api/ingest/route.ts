@@ -18,25 +18,30 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
-  const expected = process.env.FLIPSCOUT_API_KEY;
-  if (expected && req.headers.get("x-flipscout-key") !== expected) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: corsHeaders() });
-  }
-
+  let userId: string | null = null;
+  const apiKey = process.env.FLIPSCOUT_API_KEY;
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "missing auth token" }, { status: 401, headers: corsHeaders() });
-  }
+  const headerApiKey = req.headers.get("x-flipscout-key");
 
-  const token = authHeader.slice(7);
-  const sb = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!
-  );
+  // Check API key (for extension) - for MVP, extension calls bypass per-user filtering
+  if (apiKey && headerApiKey === apiKey) {
+    // Extension auth - we'll use RLS at DB level but allow any data to be ingested
+    userId = null; // Extension doesn't have a user
+  } else if (authHeader?.startsWith("Bearer ")) {
+    // Auth token (for web UI)
+    const token = authHeader.slice(7);
+    const sb = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!
+    );
 
-  const { data: { user }, error: authError } = await sb.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: "invalid token" }, { status: 401, headers: corsHeaders() });
+    const { data: { user }, error: authError } = await sb.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: "invalid token" }, { status: 401, headers: corsHeaders() });
+    }
+    userId = user.id;
+  } else {
+    return NextResponse.json({ error: "missing auth" }, { status: 401, headers: corsHeaders() });
   }
 
   const body = await req.json();
@@ -46,7 +51,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const db = await readDb(user.id);
+    const db = await readDb(userId || undefined);
     const text = `${title}\n${description ?? ""}`;
     const a = analyze(text, price, db.priceOverrides);
     const now = new Date().toISOString();
@@ -68,7 +73,7 @@ export async function POST(req: Request) {
       distanceMi,
       listedAt: now,
       rawText: text,
-    }, user.id);
+    }, userId || "extension");
 
     const hits = matchWatchlists(deal, db.watchlists);
     return NextResponse.json({ deal, analysis: a, watchlistHits: hits.map((w) => w.name) }, { status: 201, headers: corsHeaders() });

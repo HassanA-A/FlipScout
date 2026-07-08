@@ -49,7 +49,10 @@ goBtn.addEventListener("click", async () => {
     resultEl.textContent = `Analyzing "${capture.title}" at $${capture.price}…`;
     const res = await fetch(`${endpointInput.value}/api/ingest`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-FlipScout-Key": "flipscout-mvp-key",
+      },
       body: JSON.stringify(capture),
     });
     if (!res.ok) throw new Error(`API responded ${res.status}`);
