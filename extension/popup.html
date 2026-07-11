@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <style>
       body {
-        width: 300px;
+        width: 320px;
         margin: 0;
         padding: 14px;
         background: #0b101b;
@@ -22,6 +22,14 @@
         cursor: pointer;
       }
       button:disabled { opacity: 0.5; }
+      button.ghost {
+        background: transparent;
+        border: 1px solid #24304a;
+        color: #8a96ad;
+        font-weight: 500;
+        padding: 6px;
+        margin-top: 8px;
+      }
       input {
         width: 100%;
         margin: 4px 0 10px;
@@ -33,15 +41,34 @@
         box-sizing: border-box;
       }
       label { font-size: 11px; color: #8a96ad; }
-      #result { margin-top: 12px; white-space: pre-wrap; }
+      #result { margin-top: 12px; white-space: pre-wrap; word-break: break-word; }
+      #whoami { margin-bottom: 10px; font-size: 12px; color: #8a96ad; }
+      #whoami b { color: #3ddc97; font-weight: 600; }
       .buy { color: #3ddc97; font-weight: 700; }
       .pass { color: #f7727c; font-weight: 700; }
+      .hidden { display: none; }
+      hr { border: 0; border-top: 1px solid #24304a; margin: 12px 0; }
     </style>
   </head>
   <body>
     <label for="endpoint">FlipScout endpoint</label>
-    <input id="endpoint" placeholder="http://localhost:3000" />
-    <button id="go">Analyze with FlipScout</button>
+    <input id="endpoint" placeholder="https://your-app.vercel.app" />
+
+    <div id="login-section" class="hidden">
+      <hr />
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" />
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" />
+      <button id="signin">Sign in</button>
+    </div>
+
+    <div id="app-section" class="hidden">
+      <div id="whoami"></div>
+      <button id="go">Analyze with FlipScout</button>
+      <button id="signout" class="ghost">Sign out</button>
+    </div>
+
     <div id="result"></div>
     <script src="popup.js"></script>
   </body>

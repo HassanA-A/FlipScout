@@ -1,23 +1,17 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "FlipScout — Analyze with FlipScout",
-  "version": "0.1.0",
-  "description": "Capture the listing you're viewing and send it to your FlipScout board for AI deal analysis.",
-  "browser_action": {
+  "version": "0.2.0",
+  "description": "Capture the listing you're viewing and send it to your FlipScout board for deal analysis.",
+  "action": {
     "default_popup": "popup.html",
     "default_title": "Analyze with FlipScout"
   },
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "storage",
-    "tabs"
-  ],
-  "host_permissions": [
-    "https://*.facebook.com/*",
-    "https://*.offerup.com/*",
-    "https://*.craigslist.org/*",
-    "https://*.mercari.com/*",
-    "https://*.jawa.gg/*"
-  ]
+  "permissions": ["activeTab", "scripting", "storage"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "flipscout@flipscout.app",
+      "strict_min_version": "115.0"
+    }
+  }
 }

@@ -1,10 +1,16 @@
+import { redirect } from "next/navigation";
 import { readDb } from "@/lib/store";
 import { money } from "@/lib/board";
+import { createSupabaseServer, getSessionUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
-  const { deals } = await readDb();
+  const sb = await createSupabaseServer();
+  const user = await getSessionUser(sb);
+  if (!user) redirect("/auth");
+
+  const { deals } = await readDb(sb);
 
   const purchased = deals.filter((d) => d.status === "purchased" && d.purchasePrice);
   const sold = deals.filter((d) => d.status === "sold" && d.purchasePrice && d.salePrice);

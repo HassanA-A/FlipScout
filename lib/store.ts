@@ -1,24 +1,12 @@
 // @ts-nocheck
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Db, Deal, Watchlist } from "./types";
 
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (supabase) return supabase;
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "SUPABASE_URL and SUPABASE_ANON_KEY environment variables are required. See SETUP.md for instructions."
-    );
-  }
-
-  supabase = createClient(supabaseUrl, supabaseKey);
-  return supabase;
-}
+/**
+ * All functions take a Supabase client bound to the current user
+ * (cookie session for web, bearer token for the extension) so that
+ * Row Level Security applies to every query.
+ */
 
 function toDeal(row: any): Deal {
   return {
@@ -56,18 +44,14 @@ function toWatchlist(row: any): Watchlist {
   };
 }
 
-export async function readDb(userId?: string): Promise<Db> {
-  const sb = getSupabase();
+export async function readDb(sb: SupabaseClient): Promise<Db> {
+  const [deals, watchlists] = await Promise.all([
+    sb.from("deals").select("*").order("created_at", { ascending: false }),
+    sb.from("watchlists").select("*").order("created_at", { ascending: false }),
+  ]);
 
-  const dealsQuery = sb.from("deals").select("*").order("created_at", { ascending: false });
-  const watchlistsQuery = sb.from("watchlists").select("*").order("created_at", { ascending: false });
-
-  if (userId) {
-    dealsQuery.eq("user_id", userId);
-    watchlistsQuery.eq("user_id", userId);
-  }
-
-  const [deals, watchlists] = await Promise.all([dealsQuery, watchlistsQuery]);
+  if (deals.error) throw deals.error;
+  if (watchlists.error) throw watchlists.error;
 
   return {
     deals: (deals.data || []).map(toDeal),
@@ -76,12 +60,11 @@ export async function readDb(userId?: string): Promise<Db> {
   };
 }
 
-export async function writeDb(_db: Db): Promise<void> {
-  // No-op
-}
-
-export async function createDeal(deal: Omit<Deal, "id" | "createdAt" | "updatedAt">, userId: string): Promise<Deal> {
-  const sb = getSupabase();
+export async function createDeal(
+  sb: SupabaseClient,
+  deal: Omit<Deal, "id" | "createdAt" | "updatedAt">,
+  userId: string
+): Promise<Deal> {
   const record = {
     user_id: userId,
     title: deal.title,
@@ -106,8 +89,11 @@ export async function createDeal(deal: Omit<Deal, "id" | "createdAt" | "updatedA
   return toDeal(data);
 }
 
-export async function updateDeal(id: string, patch: Partial<Deal>): Promise<Deal> {
-  const sb = getSupabase();
+export async function updateDeal(
+  sb: SupabaseClient,
+  id: string,
+  patch: Partial<Deal>
+): Promise<Deal> {
   const record: any = { updated_at: new Date().toISOString() };
   if (patch.title !== undefined) record.title = patch.title;
   if (patch.url !== undefined) record.url = patch.url;
@@ -126,6 +112,7 @@ export async function updateDeal(id: string, patch: Partial<Deal>): Promise<Deal
   if (patch.notes !== undefined) record.notes = patch.notes;
   if (patch.purchasePrice !== undefined) record.purchase_price = patch.purchasePrice;
   if (patch.salePrice !== undefined) record.sale_price = patch.salePrice;
+
   const { data, error } = await sb
     .from("deals")
     .update(record)
@@ -136,14 +123,16 @@ export async function updateDeal(id: string, patch: Partial<Deal>): Promise<Deal
   return toDeal(data);
 }
 
-export async function deleteDeal(id: string): Promise<void> {
-  const sb = getSupabase();
+export async function deleteDeal(sb: SupabaseClient, id: string): Promise<void> {
   const { error } = await sb.from("deals").delete().eq("id", id);
   if (error) throw error;
 }
 
-export async function createWatchlist(wl: Omit<Watchlist, "id">, userId: string): Promise<Watchlist> {
-  const sb = getSupabase();
+export async function createWatchlist(
+  sb: SupabaseClient,
+  wl: Omit<Watchlist, "id">,
+  userId: string
+): Promise<Watchlist> {
   const record = {
     user_id: userId,
     name: wl.name,
@@ -156,13 +145,17 @@ export async function createWatchlist(wl: Omit<Watchlist, "id">, userId: string)
   return toWatchlist(data);
 }
 
-export async function updateWatchlist(id: string, patch: Partial<Watchlist>): Promise<Watchlist> {
-  const sb = getSupabase();
+export async function updateWatchlist(
+  sb: SupabaseClient,
+  id: string,
+  patch: Partial<Watchlist>
+): Promise<Watchlist> {
   const record: any = {};
   if (patch.name !== undefined) record.name = patch.name;
   if (patch.query !== undefined) record.query = patch.query;
   if (patch.maxPrice !== undefined) record.max_price = patch.maxPrice;
   if (patch.active !== undefined) record.active = patch.active;
+
   const { data, error } = await sb
     .from("watchlists")
     .update(record)
@@ -173,8 +166,7 @@ export async function updateWatchlist(id: string, patch: Partial<Watchlist>): Pr
   return toWatchlist(data);
 }
 
-export async function deleteWatchlist(id: string): Promise<void> {
-  const sb = getSupabase();
+export async function deleteWatchlist(sb: SupabaseClient, id: string): Promise<void> {
   const { error } = await sb.from("watchlists").delete().eq("id", id);
   if (error) throw error;
 }
