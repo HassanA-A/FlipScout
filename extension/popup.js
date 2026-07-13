@@ -80,16 +80,35 @@ async function signIn(email, password) {
 
 async function refreshSession(auth) {
   const supa = await getSupaConfig();
-  const res = await fetch(`${supa.url}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: supa.anonKey },
-    body: JSON.stringify({ refresh_token: auth.refreshToken }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    await saveState({ auth: null });
-    throw new Error("Session expired — please sign in again.");
+
+  let res;
+  let data;
+  try {
+    res = await fetch(`${supa.url}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: supa.anonKey },
+      body: JSON.stringify({ refresh_token: auth.refreshToken }),
+    });
+    data = await res.json();
+  } catch {
+    // Network blip (offline, DNS, etc.) — do NOT sign out. Keep the stored
+    // session so the next attempt can succeed once we're back online.
+    throw new Error("Couldn't reach the server — check your connection and retry.");
   }
+
+  if (!res.ok) {
+    // Only a genuinely invalid/expired refresh token should log the user out.
+    const invalid =
+      data?.error === "invalid_grant" ||
+      /refresh.*token/i.test(data?.error_description || "");
+    if (invalid) {
+      await saveState({ auth: null });
+      throw new Error("Session expired — please sign in again.");
+    }
+    // Transient server error — keep the session and let them retry.
+    throw new Error(data?.error_description || "Temporary sign-in error — please retry.");
+  }
+
   const next = {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? auth.refreshToken,
